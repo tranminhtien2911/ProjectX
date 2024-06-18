@@ -15,20 +15,32 @@ html, body{
 .min-w-100{
     min-width: 100px !important;
 }
+.table-wrapper{
+    position: relative;
+    height: 200px; 
+    padding: 0 2px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
 .table{
-    width: 100%;
     border-collapse: collapse;
     /* Customize */
-    border-radius: 16px;
-    overflow: hidden;
-    /* box-shadow: 0 0 0 1px #D9D9D9 inset; */
-    border: 1px solid #D9D9D9;
+    display: grid;
+}
+
+.table-header{
+    position: sticky;
+    top: 0;
+    display: grid;
+    align-self: start;
+    /* Customize */
+    background-color: #fff;
 }
 .table-row{
     display: grid;
     grid-template-columns: 60px 2fr 8fr 2fr min-content;
 }
-
 .table-cell{
     min-width: 4%;
     overflow: hidden;
@@ -43,6 +55,20 @@ html, body{
 }
 
 /* Customize Table 01 */
+.table-header .table-row{
+    border-radius: 16px 16px 0 0;
+    border-left: 1px solid #D9D9D9;
+    border-right: 1px solid #D9D9D9;
+    border-top: 1px solid #D9D9D9;
+    overflow: hidden;
+}
+.table-body{
+    border-radius: 0 0 16px 16px;
+    border-left: 1px solid #D9D9D9;
+    border-right: 1px solid #D9D9D9;
+    border-bottom: 1px solid #D9D9D9;
+    overflow: hidden;
+}
 .table-header .table-row, .table-body .table-row:not(:nth-last-child(1)){
     border-bottom: 1px solid #D9D9D9;
 }

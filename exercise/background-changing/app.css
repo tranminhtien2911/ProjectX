@@ -1,0 +1,39 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+.wrap {
+    /* Color */
+    /* Typography */
+    text-align: center;
+    /* Spacing */
+    /* Borders */
+    /* Box Model */
+    width: 100%;
+    height: 100%;
+    /* Layout */
+    /* Shadows */
+    /* Transition */
+    /* Misc */
+}
+.change {
+    /* Color */
+    color: #ffffff;
+    background-color: #4b70f5;
+    /* Typography */
+    font-size: 18px;
+    /* Spacing */
+    margin: 32px auto;
+    padding: 16px 32px;
+    /* Borders */
+    border: none;
+    border-radius: 12px;
+    /* Box Model */
+    /* Layout */
+    /* Shadows */
+    /* Transition */
+    /* Misc */
+    cursor: pointer;
+}
