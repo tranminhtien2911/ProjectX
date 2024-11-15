@@ -1,0 +1,905 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image/Video Upload with Drag and Drop</title>
+    <style>
+        .media-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            text-align: center;
+        }
+        .media-container.drag-over {
+            background-color: #e0e0e0;
+        }
+        .media-item {
+            position: relative;
+            width: 150px;
+            height: 100px;
+            border: 1px solid #ccc;
+            background-color: #f3f3f3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .media-item img, .media-item video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        .button-group {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+        .button-group button {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 2px 5px;
+        }
+        .add-btn {
+            width: 150px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="media-container" id="mediaContainer">
+    <div class="add-btn" onclick="addMedia()" id="addBtn">+</div>
+</div>
+
+<script>
+    const maxImages = 3;
+    const maxVideos = 1;
+    let imageCount = 0;
+    let videoCount = 0;
+
+    const mediaContainer = document.getElementById('mediaContainer');
+    const addBtn = document.getElementById('addBtn');
+
+    mediaContainer.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        mediaContainer.classList.add('drag-over');
+    });
+    mediaContainer.addEventListener('dragleave', () => {
+        mediaContainer.classList.remove('drag-over');
+    });
+    mediaContainer.addEventListener('drop', (event) => {
+        event.preventDefault();
+        mediaContainer.classList.remove('drag-over');
+        handleFiles(event.dataTransfer.files);
+    });
+
+    function addMedia() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,video/*';
+        fileInput.onchange = (event) => handleFiles(event.target.files);
+        fileInput.click();
+    }
+
+    function handleFiles(files) {
+        for (let file of files) {
+            if (file.type.startsWith('image/')) {
+                if (imageCount < maxImages) {
+                    addMediaItem(file);
+                    imageCount++;
+                } else {
+                    alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                }
+            } else if (file.type.startsWith('video/')) {
+                if (videoCount < maxVideos) {
+                    addMediaItem(file);
+                    videoCount++;
+                } else {
+                    alert('Đã đạt giới hạn tối đa 1 video.');
+                }
+            }
+        }
+        updateAddButtonVisibility();
+    }
+
+    function addMediaItem(file, replaceItem = null) {
+        const mediaItem = replaceItem || document.createElement('div');
+        mediaItem.className = 'media-item';
+
+        // Xóa tất cả nội dung cũ nếu thay thế
+        mediaItem.innerHTML = '';
+
+        const buttonGroup = document.createElement('div');
+        buttonGroup.className = 'button-group';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerText = 'X';
+        removeBtn.onclick = () => removeMedia(mediaItem);
+
+        const replaceBtn = document.createElement('button');
+        replaceBtn.innerText = 'Thay thế';
+        replaceBtn.onclick = () => replaceMediaPrompt(mediaItem);
+
+        buttonGroup.appendChild(removeBtn);
+        buttonGroup.appendChild(replaceBtn);
+        mediaItem.appendChild(buttonGroup);
+
+        // Kiểm tra loại tệp và tạo phần tử tương ứng
+        if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            mediaItem.appendChild(img);
+        } else if (file.type.startsWith('video/')) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.controls = true;
+            mediaItem.appendChild(video);
+        }
+
+        if (!replaceItem) {
+            mediaContainer.insertBefore(mediaItem, mediaContainer.lastElementChild);
+        }
+    }
+
+    function replaceMediaPrompt(mediaItem) {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,video/*';
+        fileInput.onchange = (event) => {
+            const newFile = event.target.files[0];
+            
+            // Kiểm tra nếu thay thế video bằng ảnh
+        
+
+            // Nếu thay thế video bằng ảnh, cần xóa video trước khi thêm ảnh
+            if (mediaItem.querySelector('video')) {
+                //mediaItem.querySelector('video').remove();  // Xóa video
+                if (newFile.type.startsWith('image/') && imageCount >= maxImages) {
+                    alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                    return;
+                }else{
+                    videoCount--; 
+                    mediaItem.querySelector('video').remove();
+                }
+    
+            }
+
+            // Nếu thay thế ảnh bằng video, cần xóa ảnh trước khi thêm video
+            if (mediaItem.querySelector('img')) {
+                //mediaItem.querySelector('img').remove();  // Xóa ảnh
+                if (newFile.type.startsWith('video/') && videoCount >= maxVideos) {
+                    alert('Đã đạt giới hạn tối đa 1 video.');
+                    return;
+                }else{
+                    imageCount--; 
+                    mediaItem.querySelector('img').remove();
+                }
+    
+            }
+
+            // Thêm media mới
+            addMediaItem(newFile, mediaItem);
+
+            // Cập nhật lại số lượng ảnh hoặc video sau khi thay thế
+            if (newFile.type.startsWith('image/')) {
+                imageCount++;
+            } else if (newFile.type.startsWith('video/')) {
+                videoCount++;
+            }
+
+            updateAddButtonVisibility();
+        };
+        fileInput.click();
+    }
+
+    function removeMedia(mediaItem) {
+        const imgOrVideo = mediaItem.querySelector('img, video');
+        if (imgOrVideo) {
+            if (imgOrVideo.tagName.toLowerCase() === 'img') {
+                imageCount--;
+            } else if (imgOrVideo.tagName.toLowerCase() === 'video') {
+                videoCount--;
+            }
+        }
+        mediaItem.remove();
+        updateAddButtonVisibility();
+    }
+
+    function updateAddButtonVisibility() {
+        // Ẩn nút "Thêm" khi đã đủ ảnh và video
+        if (imageCount >= maxImages && videoCount >= maxVideos) {
+            addBtn.style.display = 'none';
+        } else {
+            addBtn.style.display = 'flex';
+        }
+    }
+</script>
+
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image/Video Upload with Drag and Drop</title>
+    <style>
+        .media-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            text-align: center;
+        }
+
+        .media-container.drag-over {
+            background-color: #e0e0e0;
+        }
+
+        .media-item {
+            position: relative;
+            width: 150px;
+            height: 100px;
+            border: 1px solid #ccc;
+            background-color: #f3f3f3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .media-item img,
+        .media-item video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .button-group {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .button-group button {
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 2px 5px;
+        }
+
+        .add-btn {
+            width: 150px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="media-container" id="mediaContainer">
+        <div class="add-btn" onclick="addMedia()" id="addBtn">+</div>
+    </div>
+
+    <!-- <script>
+        const maxImages = 3;
+        const maxVideos = 1;
+        let imageCount = 0;
+        let videoCount = 0;
+
+
+        const mediaFiles = [];
+
+        const mediaContainer = document.getElementById('mediaContainer');
+        const addBtn = document.getElementById('addBtn');
+
+        mediaContainer.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            mediaContainer.classList.add('drag-over');
+        });
+        mediaContainer.addEventListener('dragleave', () => {
+            mediaContainer.classList.remove('drag-over');
+        });
+        mediaContainer.addEventListener('drop', (event) => {
+            event.preventDefault();
+            mediaContainer.classList.remove('drag-over');
+            handleFiles(event.dataTransfer.files);
+        });
+
+        function addMedia() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,video/*';
+            fileInput.onchange = (event) => handleFiles(event.target.files);
+            fileInput.click();
+        }
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    if (imageCount < maxImages) {
+                        addMediaItem(file);
+                        imageCount++;
+                    } else {
+                        alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                    }
+                } else if (file.type.startsWith('video/')) {
+                    if (videoCount < maxVideos) {
+                        addMediaItem(file);
+                        videoCount++;
+                    } else {
+                        alert('Đã đạt giới hạn tối đa 1 video.');
+                    }
+                }
+            }
+            updateAddButtonVisibility();
+            logArray();
+        }
+
+        function addMediaItem(file, replaceItem = null) {
+            const mediaItem = replaceItem || document.createElement('div');
+            mediaItem.className = 'media-item';
+
+            // Xóa tất cả nội dung cũ nếu thay thế
+            mediaItem.innerHTML = '';
+
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerText = 'X';
+            removeBtn.onclick = () => removeMedia(mediaItem);
+
+            const replaceBtn = document.createElement('button');
+            replaceBtn.innerText = 'Thay thế';
+            replaceBtn.onclick = () => replaceMediaPrompt(mediaItem);
+
+            buttonGroup.appendChild(removeBtn);
+            buttonGroup.appendChild(replaceBtn);
+            mediaItem.appendChild(buttonGroup);
+
+            // Tạo URL cho file
+            const fileURL = URL.createObjectURL(file);
+
+            // Kiểm tra loại tệp và tạo phần tử tương ứng
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = fileURL;
+                mediaItem.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = fileURL;
+                video.controls = true;
+                mediaItem.appendChild(video);
+            }
+
+            // Nếu không phải là phần tử thay thế, thêm vào container và mảng mediaFiles
+            if (!replaceItem) {
+                mediaContainer.insertBefore(mediaItem, mediaContainer.lastElementChild);
+
+                const mediaData = {
+                    key: mediaFiles.length,  // Sử dụng chỉ số mảng làm key
+                    type: file.type,
+                    url: fileURL,
+                    file: file
+                };
+
+                mediaFiles.push(mediaData);
+            }
+        }
+
+
+        function replaceMediaPrompt(mediaItem) {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,video/*';
+            fileInput.onchange = (event) => {
+                const newFile = event.target.files[0];
+
+                // Tìm phần tử tương ứng trong mảng mediaFiles
+                const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+                const oldMediaData = mediaFiles[mediaIndex];
+
+                // Nếu thay thế video bằng ảnh
+                //if (oldMediaData.type.startsWith('video/') && newFile.type.startsWith('image/')) {
+                //videoCount--; 
+                //}
+
+                // Nếu thay thế ảnh bằng video
+                //if (oldMediaData.type.startsWith('image/') && newFile.type.startsWith('video/')) {
+                //imageCount--; 
+                //}
+
+                // Nếu thay thế video bằng ảnh, cần xóa video trước khi thêm ảnh
+                if (mediaItem.querySelector('video')) {
+                    //mediaItem.querySelector('video').remove();  // Xóa video
+                    if (newFile.type.startsWith('image/') && imageCount >= maxImages) {
+                        alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                        return;
+                    } else {
+                        videoCount--;
+                        mediaItem.querySelector('video').remove();
+                    }
+
+                }
+
+                // Nếu thay thế ảnh bằng video, cần xóa ảnh trước khi thêm video
+                if (mediaItem.querySelector('img')) {
+                    //mediaItem.querySelector('img').remove();  // Xóa ảnh
+                    if (newFile.type.startsWith('video/') && videoCount >= maxVideos) {
+                        alert('Đã đạt giới hạn tối đa 1 video.');
+                        return;
+                    } else {
+                        imageCount--;
+                        mediaItem.querySelector('img').remove();
+                    }
+
+                }
+
+                // Cập nhật mảng mediaFiles với dữ liệu mới
+                const fileURL = URL.createObjectURL(newFile);
+                const updatedMediaData = {
+                    key: oldMediaData.key,  // Giữ key cũ
+                    type: newFile.type,
+                    url: fileURL,
+                    file: newFile
+                };
+
+                // Cập nhật mảng
+                mediaFiles[mediaIndex] = updatedMediaData;
+
+                // Thay thế media trong giao diện
+                addMediaItem(newFile, mediaItem);
+
+                // Cập nhật lại số lượng ảnh hoặc video sau khi thay thế
+                if (newFile.type.startsWith('image/')) {
+                    imageCount++;
+                } else if (newFile.type.startsWith('video/')) {
+                    videoCount++;
+                }
+
+                updateAddButtonVisibility();
+                logArray();
+            };
+            fileInput.click();
+        }
+
+
+        function removeMedia(mediaItem) {
+            const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+            const mediaData = mediaFiles[mediaIndex];
+
+            // Xóa phần tử khỏi mảng mediaFiles
+            mediaFiles.splice(mediaIndex, 1);
+
+            // Cập nhật số lượng ảnh hoặc video
+            if (mediaData.type.startsWith('image/')) {
+                imageCount--;
+            } else if (mediaData.type.startsWith('video/')) {
+                videoCount--;
+            }
+
+            mediaItem.remove();
+            updateAddButtonVisibility();
+            logArray();
+        }
+
+
+        function updateAddButtonVisibility() {
+            if (imageCount >= maxImages && videoCount >= maxVideos) {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = 'flex';
+            }
+        }
+
+        function logArray() {
+            console.log(mediaFiles)
+        }
+    </script> -->
+
+    <script>
+        const maxImages = 3;
+        const maxVideos = 1;
+        let imageCount = 0;
+        let videoCount = 0;
+
+
+        const mediaFiles = [];
+
+        const mediaContainer = document.getElementById('mediaContainer');
+        const addBtn = document.getElementById('addBtn');
+
+        // --- Các sự kiện drag-and-drop cho addBtn (Nút thêm mới media) ---
+        addBtn.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            addBtn.classList.add('drag-over');  // Thêm hiệu ứng kéo vào
+        });
+
+        addBtn.addEventListener('dragleave', () => {
+            addBtn.classList.remove('drag-over');  // Loại bỏ hiệu ứng kéo ra ngoài
+        });
+
+        addBtn.addEventListener('drop', (event) => {
+            event.preventDefault();
+            addBtn.classList.remove('drag-over');
+            const newFile = event.dataTransfer.files[0];  // Lấy tệp đầu tiên từ sự kiện drop
+
+            if (newFile) {
+                handleDroppedFile(newFile);  // Xử lý tệp đã thả
+            }
+        });
+
+        function addMedia() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,video/*';
+            fileInput.onchange = (event) => handleFiles(event.target.files);
+            fileInput.click();
+        }
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    if (imageCount < maxImages) {
+                        addMediaItem(file);
+                        imageCount++;
+                    } else {
+                        alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                    }
+                } else if (file.type.startsWith('video/')) {
+                    if (videoCount < maxVideos) {
+                        addMediaItem(file);
+                        videoCount++;
+                    } else {
+                        alert('Đã đạt giới hạn tối đa 1 video.');
+                    }
+                }
+            }
+            updateAddButtonVisibility();
+            logArray();
+        }
+        
+
+        // Hàm xử lý khi thả tệp vào addBtn
+        function handleDroppedFile(file) {
+            // Kiểm tra loại tệp và xử lý thêm mới media
+            if (file.type.startsWith('image/')) {
+                if (imageCount < maxImages) {
+                    addMediaItem(file);
+                    imageCount++;
+                } else {
+                    alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                }
+            } else if (file.type.startsWith('video/')) {
+                if (videoCount < maxVideos) {
+                    addMediaItem(file);
+                    videoCount++;
+                } else {
+                    alert('Đã đạt giới hạn tối đa 1 video.');
+                }
+            } else {
+                alert('Chỉ hỗ trợ ảnh và video.');
+            }
+        }
+
+
+        // --- Các sự kiện drag-and-drop cho mediaItem (Thay thế media) ---
+        mediaContainer.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const mediaItem = event.target.closest('.media-item');
+            if (mediaItem) {
+                mediaItem.classList.add('drag-over');  // Thêm hiệu ứng kéo vào mediaItem
+            }
+        });
+
+        mediaContainer.addEventListener('dragleave', (event) => {
+            const mediaItem = event.target.closest('.media-item');
+            if (mediaItem) {
+                mediaItem.classList.remove('drag-over');  // Loại bỏ hiệu ứng khi kéo ra khỏi mediaItem
+            }
+        });
+
+        mediaContainer.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const mediaItem = event.target.closest('.media-item');
+            if (mediaItem) {
+                mediaItem.classList.remove('drag-over');
+                const newFile = event.dataTransfer.files[0];  // Lấy tệp đầu tiên từ sự kiện drop
+
+                if (newFile) {
+                    replaceMediaFile(mediaItem, newFile);  // Thay thế tệp trong mediaItem
+                }
+            }
+        });
+
+        // Hàm xử lý khi thả tệp vào mediaItem (Thay thế tệp)
+        function replaceMediaFile(mediaItem, newFile) {
+            const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+            const oldMediaData = mediaFiles[mediaIndex];
+
+            // Kiểm tra loại tệp cũ và mới để cập nhật imageCount và videoCount
+            if (mediaItem.querySelector('video')) {
+                if (newFile.type.startsWith('image/') && imageCount >= maxImages) {
+                    alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                    return;
+                } else {
+                    videoCount--;
+                    mediaItem.querySelector('video').remove();
+                }
+            }
+
+            if (mediaItem.querySelector('img')) {
+                if (newFile.type.startsWith('video/') && videoCount >= maxVideos) {
+                    alert('Đã đạt giới hạn tối đa 1 video.');
+                    return;
+                } else {
+                    imageCount--;
+                    mediaItem.querySelector('img').remove();
+                }
+            }
+
+            // Cập nhật mảng mediaFiles và giao diện
+            const fileURL = URL.createObjectURL(newFile);
+            const updatedMediaData = {
+                key: oldMediaData.key,  // Giữ key cũ
+                type: newFile.type,
+                url: fileURL,
+                file: newFile
+            };
+
+            // Cập nhật mảng mediaFiles
+            mediaFiles[mediaIndex] = updatedMediaData;
+
+            // Thay thế media trong giao diện
+            addMediaItem(newFile, mediaItem);
+
+            // Cập nhật lại số lượng ảnh hoặc video sau khi thay thế
+            if (newFile.type.startsWith('image/')) {
+                imageCount++;
+            } else if (newFile.type.startsWith('video/')) {
+                videoCount++;
+            }
+
+            updateAddButtonVisibility();
+            logArray();
+
+            fileInput.onchange = (event) => {
+                const newFile = event.target.files[0];
+
+                // Tìm phần tử tương ứng trong mảng mediaFiles
+                const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+                const oldMediaData = mediaFiles[mediaIndex];
+
+                // Nếu thay thế video bằng ảnh, cần xóa video trước khi thêm ảnh
+                if (mediaItem.querySelector('video')) {
+                    //mediaItem.querySelector('video').remove();  // Xóa video
+                    if (newFile.type.startsWith('image/') && imageCount >= maxImages) {
+                        alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                        return;
+                    } else {
+                        videoCount--;
+                        mediaItem.querySelector('video').remove();
+                    }
+
+                }
+
+                // Nếu thay thế ảnh bằng video, cần xóa ảnh trước khi thêm video
+                if (mediaItem.querySelector('img')) {
+                    //mediaItem.querySelector('img').remove();  // Xóa ảnh
+                    if (newFile.type.startsWith('video/') && videoCount >= maxVideos) {
+                        alert('Đã đạt giới hạn tối đa 1 video.');
+                        return;
+                    } else {
+                        imageCount--;
+                        mediaItem.querySelector('img').remove();
+                    }
+
+                }
+
+                // Cập nhật mảng mediaFiles với dữ liệu mới
+                const fileURL = URL.createObjectURL(newFile);
+                const updatedMediaData = {
+                    key: oldMediaData.key,  // Giữ key cũ
+                    type: newFile.type,
+                    url: fileURL,
+                    file: newFile
+                };
+
+                // Cập nhật mảng
+                mediaFiles[mediaIndex] = updatedMediaData;
+
+                // Thay thế media trong giao diện
+                addMediaItem(newFile, mediaItem);
+
+                // Cập nhật lại số lượng ảnh hoặc video sau khi thay thế
+                if (newFile.type.startsWith('image/')) {
+                    imageCount++;
+                } else if (newFile.type.startsWith('video/')) {
+                    videoCount++;
+                }
+
+                updateAddButtonVisibility();
+                logArray();
+            };
+        }
+
+        function replaceMediaPrompt(mediaItem) {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,video/*';
+            fileInput.onchange = (event) => {
+                const newFile = event.target.files[0];
+
+                // Tìm phần tử tương ứng trong mảng mediaFiles
+                const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+                const oldMediaData = mediaFiles[mediaIndex];
+
+                // Nếu thay thế video bằng ảnh, cần xóa video trước khi thêm ảnh
+                if (mediaItem.querySelector('video')) {
+                    //mediaItem.querySelector('video').remove();  // Xóa video
+                    if (newFile.type.startsWith('image/') && imageCount >= maxImages) {
+                        alert('Đã đạt giới hạn tối đa 3 ảnh.');
+                        return;
+                    } else {
+                        videoCount--;
+                        mediaItem.querySelector('video').remove();
+                    }
+
+                }
+
+                // Nếu thay thế ảnh bằng video, cần xóa ảnh trước khi thêm video
+                if (mediaItem.querySelector('img')) {
+                    //mediaItem.querySelector('img').remove();  // Xóa ảnh
+                    if (newFile.type.startsWith('video/') && videoCount >= maxVideos) {
+                        alert('Đã đạt giới hạn tối đa 1 video.');
+                        return;
+                    } else {
+                        imageCount--;
+                        mediaItem.querySelector('img').remove();
+                    }
+
+                }
+
+                // Cập nhật mảng mediaFiles với dữ liệu mới
+                const fileURL = URL.createObjectURL(newFile);
+                const updatedMediaData = {
+                    key: oldMediaData.key,  // Giữ key cũ
+                    type: newFile.type,
+                    url: fileURL,
+                    file: newFile
+                };
+
+                // Cập nhật mảng
+                mediaFiles[mediaIndex] = updatedMediaData;
+
+                // Thay thế media trong giao diện
+                addMediaItem(newFile, mediaItem);
+
+                // Cập nhật lại số lượng ảnh hoặc video sau khi thay thế
+                if (newFile.type.startsWith('image/')) {
+                    imageCount++;
+                } else if (newFile.type.startsWith('video/')) {
+                    videoCount++;
+                }
+
+                updateAddButtonVisibility();
+                logArray();
+            };
+            fileInput.click();
+        }
+
+
+
+        // --- Hàm hỗ trợ thêm mới media và thay thế media (không thay đổi nhiều) ---
+        function addMediaItem(file, replaceItem = null) {
+            const mediaItem = replaceItem || document.createElement('div');
+            mediaItem.className = 'media-item';
+
+            // Xóa tất cả nội dung cũ nếu thay thế
+            mediaItem.innerHTML = '';
+
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerText = 'X';
+            removeBtn.onclick = () => removeMedia(mediaItem);
+
+            const replaceBtn = document.createElement('button');
+            replaceBtn.innerText = 'Thay thế';
+            replaceBtn.onclick = () => replaceMediaPrompt(mediaItem);
+
+            buttonGroup.appendChild(removeBtn);
+            buttonGroup.appendChild(replaceBtn);
+            mediaItem.appendChild(buttonGroup);
+
+            // Tạo URL cho file
+            const fileURL = URL.createObjectURL(file);
+
+            // Kiểm tra loại tệp và tạo phần tử tương ứng
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = fileURL;
+                mediaItem.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = fileURL;
+                video.controls = true;
+                mediaItem.appendChild(video);
+            }
+
+            // Nếu không phải là phần tử thay thế, thêm vào container và mảng mediaFiles
+            if (!replaceItem) {
+                mediaContainer.insertBefore(mediaItem, mediaContainer.lastElementChild);
+
+                const mediaData = {
+                    key: mediaFiles.length,  // Sử dụng chỉ số mảng làm key
+                    type: file.type,
+                    url: fileURL,
+                    file: file
+                };
+
+                mediaFiles.push(mediaData);
+            }
+        }
+
+        function removeMedia(mediaItem) {
+            const mediaIndex = Array.from(mediaContainer.children).indexOf(mediaItem);
+            const mediaData = mediaFiles[mediaIndex];
+
+            // Xóa phần tử khỏi mảng mediaFiles
+            mediaFiles.splice(mediaIndex, 1);
+
+            // Cập nhật số lượng ảnh hoặc video
+            if (mediaData.type.startsWith('image/')) {
+                imageCount--;
+            } else if (mediaData.type.startsWith('video/')) {
+                videoCount--;
+            }
+
+            mediaItem.remove();
+            updateAddButtonVisibility();
+            logArray();
+        }
+
+        function updateAddButtonVisibility() {
+            if (imageCount >= maxImages && videoCount >= maxVideos) {
+                addBtn.style.display = 'none';
+            } else {
+                addBtn.style.display = 'flex';
+            }
+        }
+
+        function logArray() {
+            console.log(mediaFiles);
+        }
+
+    </script>
+</body>
+
+</html>
